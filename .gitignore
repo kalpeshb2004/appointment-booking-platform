@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual env (naam jo bhi ho)
+venv/
+.venv/
+env/
+
+# Secrets - kabhi commit mat karo
+.env
+
+# Django
+db.sqlite3
+staticfiles/
+media/
+
+# Tests / cache
+.pytest_cache/
+.coverage
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store

@@ -1,0 +1,10 @@
+Django
+mysqlclient
+python-dotenv
+djangorestframework
+djangorestframework-simplejwt
+django-cors-headers
+pytest
+pytest-django
+gunicorn
+whitenoise
