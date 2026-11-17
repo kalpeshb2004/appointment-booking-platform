@@ -4,7 +4,8 @@ from django.db import transaction
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from appointments.models import Patient, Department, Hospital
+from appointments.models import Patient, Department,Doctor,DoctorSchedule,Hospital
+
 
 
 def get_role(user):
@@ -103,3 +104,43 @@ class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Department
         fields = ["id", "name"]
+
+class DoctorSerializer(serializers.ModelSerializer):
+    """Doctor list ke liye (halka data)"""
+
+    # SerializerMethodField: custom logic se value, niche get_name() chalta
+    name = serializers.SerializerMethodField()
+    # source="a.b": related table se value uthao. Output-only isliye read_only
+    department = serializers.CharField(source="department.name", read_only=True)
+    department_id = serializers.IntegerField(source="department.id", read_only=True)
+    hospital = serializers.CharField(source="department.hospital.name", read_only=True)
+    hospital_id = serializers.IntegerField(source="department.hospital.id", read_only=True)
+
+    class Meta:
+        model = Doctor
+        fields = ["id", "name", "qualification", "experience_years",
+                  "consultation_fee", "department", "department_id",
+                  "hospital", "hospital_id"]
+
+    def get_name(self, obj):
+        # Full name nahi hai to username
+        return obj.user.get_full_name() or obj.user.username
+
+
+class DoctorScheduleSerializer(serializers.ModelSerializer):
+    # choices ka readable naam: 0 → "Mon"
+    day = serializers.CharField(source="get_day_of_week_display", read_only=True)
+
+    class Meta:
+        model = DoctorSchedule
+        fields = ["day_of_week", "day", "start_time", "end_time"]
+
+
+class DoctorDetailSerializer(DoctorSerializer):
+    """Ek doctor ki detail: list wala data + weekly schedule"""
+
+    # related_name="schedules" se nested list
+    schedule = DoctorScheduleSerializer(source="schedules", many=True, read_only=True)
+
+    class Meta(DoctorSerializer.Meta):
+        fields = DoctorSerializer.Meta.fields + ["slot_minutes", "schedule"]
