@@ -4,7 +4,7 @@ from django.db import transaction
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from appointments.models import Patient
+from appointments.models import Patient, Department, Hospital
 
 
 def get_role(user):
@@ -90,3 +90,16 @@ class LoginSerializer(TokenObtainPairSerializer):
             "role": get_role(self.user),
         }
         return data
+
+
+class HospitalSerializer(serializers.ModelSerializer):
+    # ModelSerializer: model ke fields se khud serializer banata (validation + conversion)
+    class Meta:
+        model = Hospital
+        fields = ["id", "name", "city", "address", "phone"]  # sirf ye fields bahar jaayenge
+
+
+class DepartmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Department
+        fields = ["id", "name"]
