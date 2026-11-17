@@ -195,3 +195,30 @@ class StatusUpdateSerializer(serializers.Serializer):
     """Doctor sirf in do status me badal sakta. Cancel patient ka kaam hai."""
 
     status = serializers.ChoiceField(choices=["completed", "no_show"])
+
+class AdminHospitalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Hospital
+        fields = ["id", "name", "city", "address", "phone"]
+
+    def validate(self, attrs):
+        # Same naam + same city ka duplicate hospital nahi.
+        # validate(): saare fields ek saath milte, cross-field check ke liye.
+        # PATCH me field na aaye to instance ki purani value use.
+        name = attrs.get("name", getattr(self.instance, "name", None))
+        city = attrs.get("city", getattr(self.instance, "city", None))
+        qs = Hospital.objects.filter(name__iexact=name, city__iexact=city)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)  # edit me khud ko ignore
+        if qs.exists():
+            raise serializers.ValidationError("Is city me is naam ka hospital pehle se hai.")
+        return attrs
+
+
+class AdminDepartmentSerializer(serializers.ModelSerializer):
+    # Model ke unique_together se DRF khud duplicate (hospital + name) check lagata
+    hospital_name = serializers.CharField(source="hospital.name", read_only=True)
+
+    class Meta:
+        model = Department
+        fields = ["id", "hospital", "hospital_name", "name"]

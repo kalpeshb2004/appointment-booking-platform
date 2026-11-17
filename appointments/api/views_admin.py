@@ -1,13 +1,15 @@
 from datetime import datetime
 
-from django.db.models import Count, Q
+from django.db.models import Count, Q, ProtectedError
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from appointments.models import Appointment, Doctor, Patient
+from appointments.models import Appointment, Doctor, Patient,Department,Hospital
 from appointments.permissions import IsAdmin
+from rest_framework import viewsets
+from .serializers import AdminDepartmentSerializer, AdminHospitalSerializer
 
 
 def parse_date(value, field):
@@ -124,3 +126,45 @@ class AdminStatsView(APIView):
             "by_doctor": doctors,
             "by_department": departments,
         })
+
+class ProtectedDeleteMixin:
+    """
+    Doctor wale department ko delete karo to Django ProtectedError deta
+    (model me on_delete=PROTECT). Bina handle kiye 500 crash.
+    Yahan pakad ke 409 Conflict + saaf message dete.
+    """
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except ProtectedError:
+            return Response(
+                {"detail": "Ye delete nahi ho sakta, iske under doctors/data juda hai. "
+                           "Pehle unhe hatao ya doosre department me daalo.",
+                 "code": "in_use"},
+                status=409,
+            )
+
+
+class AdminHospitalViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
+    """
+    ModelViewSet = list, retrieve, create, update, partial_update, destroy
+    ek class me. Router URLs khud banata.
+    """
+
+    queryset = Hospital.objects.order_by("name")
+    serializer_class = AdminHospitalSerializer
+    permission_classes = [IsAdmin]  # sirf admin (is_staff)
+
+
+class AdminDepartmentViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
+    serializer_class = AdminDepartmentSerializer
+    permission_classes = [IsAdmin]
+
+    def get_queryset(self):
+        # select_related: hospital_name ke liye alag query nahi (N+1 se bachav)
+        qs = Department.objects.select_related("hospital").order_by("hospital__name", "name")
+        hospital = self.request.query_params.get("hospital")  # ?hospital=<id>
+        if hospital and hospital.isdigit():
+            qs = qs.filter(hospital_id=hospital)
+        return qs

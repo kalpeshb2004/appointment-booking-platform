@@ -6,8 +6,14 @@ from .views_patient import AppointmentDetailView,AppointmentListCreateView
 from .views_public import (DoctorDetailView, DoctorListView, DoctorSlotsView,
                            HospitalDepartmentListView, HospitalListView)
 from .views_doctor import DoctorAppointmentListView, DoctorAppointmentStatusView
-from .views_admin import AdminStatsView
+from .views_admin import (AdminDepartmentViewSet, AdminHospitalViewSet,AdminStatsView)
+from rest_framework.routers import SimpleRouter
 
+
+# trailing_slash=False: baaki URLs jaise bina "/" ke
+router = SimpleRouter(trailing_slash=False)
+router.register("admin/hospitals", AdminHospitalViewSet, basename="admin-hospital")
+router.register("admin/departments", AdminDepartmentViewSet, basename="admin-department")
 
 urlpatterns = [
     # Auth
@@ -36,3 +42,6 @@ urlpatterns = [
          # urlpatterns me add
     path("admin/stats", AdminStatsView.as_view(), name="admin-stats"),
 ]
+
+# Router ke URLs list ke end me jod do
+urlpatterns += router.urls
