@@ -175,3 +175,38 @@ def cancel_appointment(appointment_id, patient):
         # Isse slot wapas free, koi aur book kar sakta.
         appt.save()
         return appt
+
+def update_appointment_status(appointment_id, doctor, new_status):
+    """
+    Doctor booking ko completed / no_show mark kare.
+    Rules: apni hi booking, abhi 'booked' ho, aur time shuru ho chuka ho.
+    """
+    with transaction.atomic():
+        try:
+            # doctor=doctor: dusre doctor ki booking par 404.
+            # select_for_update: patient cancel kar raha ho aur doctor mark,
+            # dono ek saath aaye to ek-ek karke chalein (state corrupt nahi hoti).
+            appt = Appointment.objects.select_for_update().get(
+                pk=appointment_id, doctor=doctor
+            )
+        except Appointment.DoesNotExist:
+            raise BookingError("Appointment nahi mili.", 404, "not_found")
+
+        # State machine: booked → completed / no_show. Baaki se aage nahi.
+        if appt.status != "booked":
+            raise BookingError(
+                f"Appointment pehle se {appt.status} hai, status nahi badal sakta.",
+                409,
+                "not_updatable",
+            )
+
+        # Future ki appointment ko "completed" nahi kar sakte
+        start_dt = timezone.make_aware(datetime.combine(appt.date, appt.start_time))
+        if start_dt > timezone.now():
+            raise BookingError(
+                "Appointment ka time abhi shuru nahi hua.", 400, "too_early"
+            )
+
+        appt.status = new_status
+        appt.save()  # save() active_slot ko NULL karta (booked nahi raha)
+        return appt

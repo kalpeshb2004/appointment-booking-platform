@@ -5,6 +5,8 @@ from .views_auth import LoginView, MeView, RegisterView
 from .views_patient import AppointmentDetailView,AppointmentListCreateView
 from .views_public import (DoctorDetailView, DoctorListView, DoctorSlotsView,
                            HospitalDepartmentListView, HospitalListView)
+from .views_doctor import DoctorAppointmentListView, DoctorAppointmentStatusView
+
 
 urlpatterns = [
     # Auth
@@ -27,4 +29,7 @@ urlpatterns = [
     # urlpatterns me add
     path("appointments/<int:pk>", AppointmentDetailView.as_view(),
          name="appointment-detail"),
+          # urlpatterns me add
+    path("doctor/appointments/<int:pk>/status", DoctorAppointmentStatusView.as_view(),
+         name="doctor-appointment-status"),
 ]

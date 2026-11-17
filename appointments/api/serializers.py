@@ -171,3 +171,27 @@ class AppointmentSerializer(serializers.ModelSerializer):
 
     def get_doctor_name(self, obj):
         return obj.doctor.user.get_full_name() or obj.doctor.user.username
+
+class DoctorAppointmentSerializer(serializers.ModelSerializer):
+    """
+    Doctor ko patient ki zaruri info dikhti (naam, phone, gender).
+    Email/DOB jaisa extra data nahi bhejte (privacy: need-to-know).
+    """
+
+    patient_name = serializers.SerializerMethodField()
+    patient_phone = serializers.CharField(source="patient.phone", read_only=True)
+    patient_gender = serializers.CharField(source="patient.gender", read_only=True)
+
+    class Meta:
+        model = Appointment
+        fields = ["id", "patient_name", "patient_phone", "patient_gender",
+                  "date", "start_time", "end_time", "reason", "status"]
+
+    def get_patient_name(self, obj):
+        u = obj.patient.user
+        return u.get_full_name() or u.username
+
+class StatusUpdateSerializer(serializers.Serializer):
+    """Doctor sirf in do status me badal sakta. Cancel patient ka kaam hai."""
+
+    status = serializers.ChoiceField(choices=["completed", "no_show"])
