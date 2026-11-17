@@ -6,10 +6,16 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from appointments.models import Appointment, Doctor, Patient,Department,Hospital
+from appointments.models import (Appointment, Department, Doctor, DoctorLeave,DoctorSchedule, Hospital, Patient)
+
 from appointments.permissions import IsAdmin
-from rest_framework import viewsets
-from .serializers import AdminDepartmentSerializer, AdminHospitalSerializer
+from django.db import transaction
+from rest_framework import generics, viewsets
+from rest_framework.decorators import action
+
+from .serializers import (AdminDepartmentSerializer, AdminDoctorCreateSerializer,AdminDoctorSerializer, AdminHospitalSerializer,LeaveInputSerializer, ScheduleInputSerializer)
+
+
 
 
 def parse_date(value, field):
@@ -168,3 +174,125 @@ class AdminDepartmentViewSet(ProtectedDeleteMixin, viewsets.ModelViewSet):
         if hospital and hospital.isdigit():
             qs = qs.filter(hospital_id=hospital)
         return qs
+
+class AdminDoctorViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAdmin]
+
+    def get_queryset(self):
+        qs = Doctor.objects.select_related(
+            "user", "department__hospital"
+        ).order_by("user__first_name")
+
+        # Admin ko inactive doctors bhi dikhte (public API me nahi dikhte)
+        p = self.request.query_params
+        if p.get("hospital", "").isdigit():
+            qs = qs.filter(department__hospital_id=p["hospital"])
+        if p.get("department", "").isdigit():
+            qs = qs.filter(department_id=p["department"])
+        if p.get("is_active") in ("true", "false"):
+            qs = qs.filter(is_active=p["is_active"] == "true")
+        return qs
+
+    def get_serializer_class(self):
+        # create ke liye alag serializer (username/password chahiye), baaki ke liye read/update wala
+        if self.action == "create":
+            return AdminDoctorCreateSerializer
+        return AdminDoctorSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = AdminDoctorCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        doctor = serializer.save()
+        # Response me read serializer: password wapas nahi jaata, id/naam sab milta
+        return Response(AdminDoctorSerializer(doctor).data, status=201)
+
+    def destroy(self, request, *args, **kwargs):
+        """Hard delete nahi, deactivate. Appointment history bachti."""
+        doctor = self.get_object()
+
+        # Aane wali booked appointments hain to pehle unka intezaam karo
+        upcoming = Appointment.objects.filter(
+            doctor=doctor, status="booked", date__gte=timezone.localdate()
+        ).count()
+        if upcoming:
+            return Response(
+                {"detail": f"Is doctor ki {upcoming} aane wali booked appointments hain. "
+                           "Pehle unhe complete/cancel karo.",
+                 "code": "has_upcoming"},
+                status=409,
+            )
+
+        with transaction.atomic():
+            doctor.is_active = False
+            doctor.save()
+            doctor.user.is_active = False  # login bhi band
+            doctor.user.save()
+        return Response({"message": "Doctor deactivate ho gaya."})
+
+    @action(detail=True, methods=["post"], url_path="schedule")
+    def set_schedule(self, request, pk=None):
+        """POST /api/admin/doctors/<id>/schedule : poora weekly schedule REPLACE"""
+        doctor = self.get_object()
+        serializer = ScheduleInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Replace semantics: purana hatao, naya daalo, ek transaction me.
+        # Beech me error aaye to purana schedule safe rehta.
+        with transaction.atomic():
+            DoctorSchedule.objects.filter(doctor=doctor).delete()
+            DoctorSchedule.objects.bulk_create([
+                DoctorSchedule(doctor=doctor, **item)
+                for item in serializer.validated_data["schedule"]
+            ])
+
+        rows = doctor.schedules.order_by("day_of_week", "start_time")
+        return Response({
+            "message": "Schedule set ho gaya.",
+            "schedule": [
+                {"day": r.get_day_of_week_display(),
+                 "start_time": r.start_time.strftime("%H:%M"),
+                 "end_time": r.end_time.strftime("%H:%M")}
+                for r in rows
+            ],
+        })
+
+    @action(detail=True, methods=["post"], url_path="leaves")
+    def add_leave(self, request, pk=None):
+        """POST /api/admin/doctors/<id>/leaves : us din ki chutti"""
+        doctor = self.get_object()
+        serializer = LeaveInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        day = serializer.validated_data["date"]
+
+        if day < timezone.localdate():
+            raise ValidationError({"date": "Past date ki leave nahi lag sakti."})
+
+        # Us din booked appointments hain to leave nahi, pehle unhe hatao
+        booked = Appointment.objects.filter(
+            doctor=doctor, date=day, status="booked"
+        ).count()
+        if booked:
+            return Response(
+                {"detail": f"Us din {booked} booked appointments hain. Pehle unhe cancel karo.",
+                 "code": "has_bookings"},
+                status=409,
+            )
+
+        # get_or_create: dobara same date daali to naya row nahi
+        leave, created = DoctorLeave.objects.get_or_create(
+            doctor=doctor, date=day,
+            defaults={"reason": serializer.validated_data["reason"]},
+        )
+        if not created:
+            return Response({"detail": "Is date ki leave pehle se hai.", "code": "exists"},
+                            status=409)
+        return Response(
+            {"id": leave.id, "date": leave.date, "reason": leave.reason}, status=201
+        )
+
+
+class AdminLeaveDeleteView(generics.DestroyAPIView):
+    """DELETE /api/admin/leaves/<id> : leave hatana (slots wapas khul jaate)"""
+
+    permission_classes = [IsAdmin]
+    queryset = DoctorLeave.objects.all()

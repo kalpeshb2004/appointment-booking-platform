@@ -3,10 +3,13 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 from .views_auth import LoginView, MeView, RegisterView
 from .views_patient import AppointmentDetailView,AppointmentListCreateView
-from .views_public import (DoctorDetailView, DoctorListView, DoctorSlotsView,
-                           HospitalDepartmentListView, HospitalListView)
+
+from .views_public import (DoctorDetailView, DoctorListView, DoctorSlotsView,HospitalDepartmentListView, HospitalListView)
+
 from .views_doctor import DoctorAppointmentListView, DoctorAppointmentStatusView
-from .views_admin import (AdminDepartmentViewSet, AdminHospitalViewSet,AdminStatsView)
+
+from .views_admin import (AdminDepartmentViewSet, AdminDoctorViewSet,AdminHospitalViewSet, AdminLeaveDeleteView,AdminStatsView)
+
 from rest_framework.routers import SimpleRouter
 
 
@@ -41,6 +44,7 @@ urlpatterns = [
          name="doctor-appointment-status"),
          # urlpatterns me add
     path("admin/stats", AdminStatsView.as_view(), name="admin-stats"),
+    path("admin/leaves/<int:pk>", AdminLeaveDeleteView.as_view(), name="admin-leave-delete"),
 ]
 
 # Router ke URLs list ke end me jod do

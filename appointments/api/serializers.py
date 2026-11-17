@@ -4,7 +4,7 @@ from django.db import transaction
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from appointments.models import Patient, Department,Doctor,DoctorSchedule,Hospital,Appointment
+from appointments.models import (Appointment, Department, Doctor, DoctorSchedule,Hospital, Patient)
 
 
 
@@ -222,3 +222,131 @@ class AdminDepartmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Department
         fields = ["id", "hospital", "hospital_name", "name"]
+
+
+class AdminDoctorCreateSerializer(serializers.Serializer):
+    """Doctor banane ka input: User account + Doctor profile ek saath."""
+
+    # --- User fields ---
+    username = serializers.CharField(max_length=150)
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True, min_length=8)
+    first_name = serializers.CharField(max_length=150)
+    last_name = serializers.CharField(max_length=150, required=False, default="")
+
+    # --- Doctor fields ---
+    # PrimaryKeyRelatedField: id se Department object khud dhundta, galat id par 400
+    department = serializers.PrimaryKeyRelatedField(queryset=Department.objects.all())
+    qualification = serializers.CharField(max_length=150)
+    experience_years = serializers.IntegerField(min_value=0, default=0)
+    consultation_fee = serializers.DecimalField(max_digits=8, decimal_places=2, min_value=0)
+    slot_minutes = serializers.IntegerField(min_value=5, max_value=120, default=15)
+
+    def validate_username(self, value):
+        if User.objects.filter(username__iexact=value).exists():
+            raise serializers.ValidationError("Ye username pehle se le liya gaya hai.")
+        return value
+
+    def validate_email(self, value):
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError("Is email se account pehle se hai.")
+        return value.lower()
+
+    def validate_password(self, value):
+        validate_password(value)
+        return value
+
+    def create(self, validated_data):
+        doctor_data = {
+            key: validated_data.pop(key)
+            for key in ("department", "qualification", "experience_years",
+                        "consultation_fee", "slot_minutes")
+        }
+        # atomic: User bana, Doctor fail hua → User bhi rollback
+        with transaction.atomic():
+            # is_staff default False. True hota to get_role() "admin" bana deta.
+            user = User.objects.create_user(**validated_data)
+            return Doctor.objects.create(user=user, **doctor_data)
+
+
+class AdminDoctorSerializer(serializers.ModelSerializer):
+    """Doctor ka read + update. (username/password yahan badalte nahi.)"""
+
+    name = serializers.SerializerMethodField()
+    username = serializers.CharField(source="user.username", read_only=True)
+    # source="user.email": User table ki field, isliye update() me alag handle
+    email = serializers.EmailField(source="user.email", required=False)
+    first_name = serializers.CharField(source="user.first_name", required=False)
+    last_name = serializers.CharField(source="user.last_name", required=False,
+                                      allow_blank=True)
+    department_name = serializers.CharField(source="department.name", read_only=True)
+    hospital_name = serializers.CharField(source="department.hospital.name",
+                                          read_only=True)
+
+    class Meta:
+        model = Doctor
+        fields = ["id", "name", "username", "email", "first_name", "last_name",
+                  "department", "department_name", "hospital_name",
+                  "qualification", "experience_years", "consultation_fee",
+                  "slot_minutes", "is_active"]
+        extra_kwargs = {
+            "slot_minutes": {"min_value": 5, "max_value": 120},
+            "consultation_fee": {"min_value": 0},
+        }
+
+    def get_name(self, obj):
+        return obj.user.get_full_name() or obj.user.username
+
+    def validate_email(self, value):
+        # Edit me khud ka email allowed, dusre ka nahi
+        taken = User.objects.filter(email__iexact=value).exclude(pk=self.instance.user_id)
+        if taken.exists():
+            raise serializers.ValidationError("Ye email kisi aur account ka hai.")
+        return value.lower()
+
+    def update(self, instance, validated_data):
+        # Dotted source ki wajah se user ka data nested dict me aata: {"user": {...}}
+        user_data = validated_data.pop("user", {})
+        with transaction.atomic():
+            user = instance.user
+            for field, value in user_data.items():
+                setattr(user, field, value)
+            instance = super().update(instance, validated_data)
+            # Doctor deactivate/activate ho to login bhi band/chalu (dono sync)
+            user.is_active = instance.is_active
+            user.save()
+            return instance
+
+
+class ScheduleItemSerializer(serializers.Serializer):
+    day_of_week = serializers.IntegerField(min_value=0, max_value=6)  # Mon=0 ... Sun=6
+    start_time = serializers.TimeField()
+    end_time = serializers.TimeField()
+
+    def validate(self, attrs):
+        if attrs["end_time"] <= attrs["start_time"]:
+            raise serializers.ValidationError("end_time, start_time ke baad hona chahiye.")
+        return attrs
+
+
+class ScheduleInputSerializer(serializers.Serializer):
+    schedule = ScheduleItemSerializer(many=True, allow_empty=False)
+
+    def validate_schedule(self, items):
+        # Ek hi din ki shifts overlap na karein (10-1 aur 12-3 galat)
+        by_day = {}
+        for item in items:
+            by_day.setdefault(item["day_of_week"], []).append(item)
+        for day, shifts in by_day.items():
+            shifts.sort(key=lambda s: s["start_time"])
+            for prev, cur in zip(shifts, shifts[1:]):
+                if cur["start_time"] < prev["end_time"]:
+                    raise serializers.ValidationError(
+                        f"Day {day} ki shifts overlap kar rahi hain."
+                    )
+        return items
+
+
+class LeaveInputSerializer(serializers.Serializer):
+    date = serializers.DateField()
+    reason = serializers.CharField(max_length=200, required=False,allow_blank=True, default="")
