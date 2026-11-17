@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Find a Doctor | MediBook</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <!-- Filled by navbar.js -->
+  <header id="navbar"></header>
+
+  <main class="container">
+    <h1>Find a doctor</h1>
+
+    <div class="filters">
+      <div>
+        <label for="hospital">Hospital</label>
+        <select id="hospital">
+          <option value="">All hospitals</option>
+        </select>
+      </div>
+      <div>
+        <label for="department">Department</label>
+        <!-- Disabled until a hospital is chosen -->
+        <select id="department" disabled>
+          <option value="">All departments</option>
+        </select>
+      </div>
+      <div>
+        <label for="search">Search by name</label>
+        <input id="search" type="search" placeholder="e.g. Sharma" />
+      </div>
+    </div>
+
+    <p id="status" class="status"></p>
+    <div id="doctor-list" class="doctor-grid"></div>
+  </main>
+
+  <!-- Order matters: each file uses functions from the ones above it -->
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/navbar.js"></script>
+  <script src="js/doctors.js"></script>
+</body>
+</html>
