@@ -4,7 +4,8 @@ from django.db import transaction
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from appointments.models import Patient, Department,Doctor,DoctorSchedule,Hospital
+from appointments.models import Patient, Department,Doctor,DoctorSchedule,Hospital,Appointment
+
 
 
 
@@ -144,3 +145,29 @@ class DoctorDetailSerializer(DoctorSerializer):
 
     class Meta(DoctorSerializer.Meta):
         fields = DoctorSerializer.Meta.fields + ["slot_minutes", "schedule"]
+
+
+class BookingSerializer(serializers.Serializer):
+    """Booking request ka input validate: format sahi hai ya nahi."""
+
+    doctor_id = serializers.IntegerField()
+    date = serializers.DateField()          # "2026-11-23"
+    start_time = serializers.TimeField()    # "10:00"
+    reason = serializers.CharField(max_length=255, required=False,
+                                   allow_blank=True, default="")
+
+
+class AppointmentSerializer(serializers.ModelSerializer):
+    """Booking ka response / list me dikhane wala data."""
+
+    doctor_name = serializers.SerializerMethodField()
+    department = serializers.CharField(source="doctor.department.name", read_only=True)
+    hospital = serializers.CharField(source="doctor.department.hospital.name", read_only=True)
+
+    class Meta:
+        model = Appointment
+        fields = ["id", "doctor_name", "department", "hospital", "date",
+                  "start_time", "end_time", "reason", "status", "created_at"]
+
+    def get_doctor_name(self, obj):
+        return obj.doctor.user.get_full_name() or obj.doctor.user.username

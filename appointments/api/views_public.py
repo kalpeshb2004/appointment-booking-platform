@@ -13,8 +13,7 @@ from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from appointments.services import get_available_slots
-
-MAX_ADVANCE_DAYS = 30  # kitne din aage tak booking allow
+from appointments.services import MAX_ADVANCE_DAYS, get_available_slots
 
 class HospitalListView(ListAPIView):
     """

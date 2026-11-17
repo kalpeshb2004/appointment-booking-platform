@@ -1,9 +1,13 @@
 from datetime import datetime, timedelta
-
 from django.utils import timezone
+from .models import Appointment, DoctorLeave, DoctorSchedule, Doctor
 
-from .models import Appointment, DoctorLeave, DoctorSchedule
+# imports replace
+from datetime import datetime, timedelta
+from django.db import IntegrityError, transaction
 
+
+MAX_ADVANCE_DAYS = 30  # kitne din aage tak booking
 
 def generate_slots(doctor, day):
     """
@@ -58,3 +62,77 @@ def get_available_slots(doctor, day):
         available.append(s)
 
     return available
+
+class BookingError(Exception):
+    """Booking rule tootne par. API isse HTTP error me badalti."""
+
+    def __init__(self, message, status_code=400, code="booking_error"):
+        super().__init__(message)
+        self.message = message
+        self.status_code = status_code  # 400 = galat request, 409 = conflict
+        self.code = code
+
+
+def book_appointment(patient, doctor, day, start, reason=""):
+    """
+    Race-condition safe booking. 3 layer ki suraksha:
+    1. transaction.atomic: sab kuch ek unit (ya pura ya kuch nahi)
+    2. select_for_update: doctor row lock, ek doctor ki booking ek-ek karke
+    3. active_slot unique constraint: DB level akhri deewar
+    """
+    today = timezone.localdate()
+
+    # --- Basic rules (lock se pehle, sasta check) ---
+    if not doctor.is_active:
+        raise BookingError("Ye doctor abhi available nahi hai.")
+    if day < today:
+        raise BookingError("Past date me booking nahi ho sakti.")
+    if day > today + timedelta(days=MAX_ADVANCE_DAYS):
+        raise BookingError(f"Sirf agle {MAX_ADVANCE_DAYS} din tak booking hoti hai.")
+
+    with transaction.atomic():
+        # Doctor ki row LOCK. Dusra request yahin ruk jaata jab tak
+        # ye transaction commit/rollback na ho. Lock pehle, slot check baad me,
+        # isliye check hamesha latest committed data dekhta.
+        Doctor.objects.select_for_update().get(pk=doctor.pk)
+
+        # Slot ab bhi available hai? (lock ke andar check, safe)
+        if start not in get_available_slots(doctor, day):
+            raise BookingError(
+                "Ye slot available nahi hai (book ho chuka ya schedule me nahi).",
+                status_code=409,
+                code="slot_unavailable",
+            )
+
+        # Patient ka usi time pe kisi aur doctor ke saath booking na ho
+        if Appointment.objects.filter(
+            patient=patient, date=day, start_time=start, status="booked"
+        ).exists():
+            raise BookingError(
+                "Is time pe aapki pehle se ek booking hai.",
+                status_code=409,
+                code="patient_clash",
+            )
+
+        # end_time = start + slot length
+        end = (datetime.combine(day, start) + timedelta(minutes=doctor.slot_minutes)).time()
+
+        try:
+            # Nested atomic = savepoint. IntegrityError pe sirf ye hissa rollback,
+            # outer transaction toot ke 500 nahi deta.
+            with transaction.atomic():
+                return Appointment.objects.create(
+                    patient=patient,
+                    doctor=doctor,
+                    date=day,
+                    start_time=start,
+                    end_time=end,
+                    reason=reason,
+                )
+        except IntegrityError:
+            # Kisi tarah do request nikal gayi to DB unique (active_slot) rok deta
+            raise BookingError(
+                "Slot abhi kisi aur ne book kar liya.",
+                status_code=409,
+                code="slot_taken",
+            )
