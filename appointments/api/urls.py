@@ -6,6 +6,7 @@ from .views_patient import AppointmentDetailView,AppointmentListCreateView
 from .views_public import (DoctorDetailView, DoctorListView, DoctorSlotsView,
                            HospitalDepartmentListView, HospitalListView)
 from .views_doctor import DoctorAppointmentListView, DoctorAppointmentStatusView
+from .views_admin import AdminStatsView
 
 
 urlpatterns = [
@@ -32,4 +33,6 @@ urlpatterns = [
           # urlpatterns me add
     path("doctor/appointments/<int:pk>/status", DoctorAppointmentStatusView.as_view(),
          name="doctor-appointment-status"),
+         # urlpatterns me add
+    path("admin/stats", AdminStatsView.as_view(), name="admin-stats"),
 ]

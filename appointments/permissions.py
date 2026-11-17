@@ -27,3 +27,15 @@ class IsDoctor(BasePermission):
             and hasattr(request.user, "doctor")
             and request.user.doctor.is_active  # deactivated doctor ko access nahi
         )
+
+class IsAdmin(BasePermission):
+    """Sirf admin (is_staff). Patient/doctor ko 403."""
+
+    message = "Sirf admin ye kaam kar sakta hai."
+
+    def has_permission(self, request, view):
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and request.user.is_staff
+        )
