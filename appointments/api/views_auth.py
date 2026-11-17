@@ -22,7 +22,7 @@ class RegisterView(APIView):
         # password kabhi wapas nahi
         return Response(
             {
-                "message": "Account ban gaya. Ab login karo.",
+                "message": "Account created. Please log in.",
                 "user": {
                     "id": user.id,
                     "username": user.username,

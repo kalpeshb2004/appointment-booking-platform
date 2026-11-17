@@ -37,13 +37,13 @@ class RegisterSerializer(serializers.Serializer):
     # validate_<field>: DRF us field ke liye khud chalata
     def validate_username(self, value):
         if User.objects.filter(username__iexact=value).exists():
-            raise serializers.ValidationError("Ye username pehle se le liya gaya hai.")
+            raise serializers.ValidationError("This username is already taken..")
         return value
 
     def validate_email(self, value):
         # Django me email by default unique nahi, isliye khud check
         if User.objects.filter(email__iexact=value).exists():
-            raise serializers.ValidationError("Is email se account pehle se hai.")
+            raise serializers.ValidationError("An account with this email already exists.")
         return value.lower()
 
     def validate_password(self, value):
@@ -211,7 +211,7 @@ class AdminHospitalSerializer(serializers.ModelSerializer):
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)  # edit me khud ko ignore
         if qs.exists():
-            raise serializers.ValidationError("Is city me is naam ka hospital pehle se hai.")
+            raise serializers.ValidationError("A hospital with this name already exists in this city.")
         return attrs
 
 
@@ -244,12 +244,12 @@ class AdminDoctorCreateSerializer(serializers.Serializer):
 
     def validate_username(self, value):
         if User.objects.filter(username__iexact=value).exists():
-            raise serializers.ValidationError("Ye username pehle se le liya gaya hai.")
+            raise serializers.ValidationError("This username is already taken..")
         return value
 
     def validate_email(self, value):
         if User.objects.filter(email__iexact=value).exists():
-            raise serializers.ValidationError("Is email se account pehle se hai.")
+            raise serializers.ValidationError("An account with this email already exists.")
         return value.lower()
 
     def validate_password(self, value):
@@ -301,7 +301,7 @@ class AdminDoctorSerializer(serializers.ModelSerializer):
         # Edit me khud ka email allowed, dusre ka nahi
         taken = User.objects.filter(email__iexact=value).exclude(pk=self.instance.user_id)
         if taken.exists():
-            raise serializers.ValidationError("Ye email kisi aur account ka hai.")
+            raise serializers.ValidationError("This email belongs to another account.")
         return value.lower()
 
     def update(self, instance, validated_data):
@@ -325,7 +325,7 @@ class ScheduleItemSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if attrs["end_time"] <= attrs["start_time"]:
-            raise serializers.ValidationError("end_time, start_time ke baad hona chahiye.")
+            raise serializers.ValidationError("end_time must be after start_time.")
         return attrs
 
 
@@ -342,7 +342,7 @@ class ScheduleInputSerializer(serializers.Serializer):
             for prev, cur in zip(shifts, shifts[1:]):
                 if cur["start_time"] < prev["end_time"]:
                     raise serializers.ValidationError(
-                        f"Day {day} ki shifts overlap kar rahi hain."
+                        f"Shifts on day {day} overlap."
                     )
         return items
 

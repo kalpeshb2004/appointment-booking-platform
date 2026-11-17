@@ -53,7 +53,7 @@ class AppointmentListCreateView(APIView):
             try:
                 day = datetime.strptime(date_str, "%Y-%m-%d").date()
             except ValueError:
-                raise ValidationError({"date": "Format galat. YYYY-MM-DD use kar."})
+                raise ValidationError({"date": "Invalid format. Use YYYY-MM-DD."})
             qs = qs.filter(date=day)
 
         # --- ?upcoming=true : aane wali booked appointments, sabse nazdeek pehle ---
@@ -123,6 +123,6 @@ class AppointmentDetailView(APIView):
             )
         # 204 (no body) ki jagah 200 + data: frontend ko updated status mil jaata
         return Response(
-            {"message": "Appointment cancel ho gayi.",
+            {"message": "Appointment cancelled successfully.",
              "appointment": AppointmentSerializer(appointment).data}
         )

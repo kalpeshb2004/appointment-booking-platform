@@ -48,7 +48,7 @@ class DoctorAppointmentListView(APIView):
             try:
                 day = datetime.strptime(date_str, "%Y-%m-%d").date()
             except ValueError:
-                raise ValidationError({"date": "Format galat. YYYY-MM-DD use kar."})
+                raise ValidationError({"date": "Invalid format. Use YYYY-MM-DD."})
             qs = qs.filter(date=day)
 
         data = DoctorAppointmentSerializer(qs, many=True).data
@@ -80,7 +80,7 @@ class DoctorAppointmentStatusView(APIView):
 
         return Response(
             {
-                "message": f"Status '{appointment.status}' set ho gaya.",
+                "message": f"Status updated to '{appointment.status}'.",
                 "appointment": DoctorAppointmentSerializer(appointment).data,
             }
         )

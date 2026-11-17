@@ -23,7 +23,7 @@ def parse_date(value, field):
     try:
         return datetime.strptime(value, "%Y-%m-%d").date()
     except ValueError:
-        raise ValidationError({field: "Format galat. YYYY-MM-DD use kar."})
+        raise ValidationError({field: "Invalid format. Use YYYY-MM-DD."})
 
 
 def pct(part, total):
@@ -62,7 +62,7 @@ class AdminStatsView(APIView):
             date_to = parse_date(date_to, "to")
             qs = qs.filter(date__lte=date_to)
         if date_from and date_to and date_from > date_to:
-            raise ValidationError({"from": "'from' date 'to' se pehle honi chahiye."})
+            raise ValidationError({"from": "'from' date must be on or before the 'to' date."})
 
         # --- 1) Overall: ek query me total + status-wise ---
         overall = qs.aggregate(total=Count("id"), **STATUS_COUNTS)
@@ -227,7 +227,7 @@ class AdminDoctorViewSet(viewsets.ModelViewSet):
             doctor.save()
             doctor.user.is_active = False  # login bhi band
             doctor.user.save()
-        return Response({"message": "Doctor deactivate ho gaya."})
+        return Response({"message": "Doctor deactivated."})
 
     @action(detail=True, methods=["post"], url_path="schedule")
     def set_schedule(self, request, pk=None):
@@ -247,7 +247,7 @@ class AdminDoctorViewSet(viewsets.ModelViewSet):
 
         rows = doctor.schedules.order_by("day_of_week", "start_time")
         return Response({
-            "message": "Schedule set ho gaya.",
+            "message": "Schedule updated.",
             "schedule": [
                 {"day": r.get_day_of_week_display(),
                  "start_time": r.start_time.strftime("%H:%M"),
@@ -265,7 +265,7 @@ class AdminDoctorViewSet(viewsets.ModelViewSet):
         day = serializer.validated_data["date"]
 
         if day < timezone.localdate():
-            raise ValidationError({"date": "Past date ki leave nahi lag sakti."})
+            raise ValidationError({"date": "Leave cannot be added for a past date."})
 
         # Us din booked appointments hain to leave nahi, pehle unhe hatao
         booked = Appointment.objects.filter(
@@ -273,7 +273,7 @@ class AdminDoctorViewSet(viewsets.ModelViewSet):
         ).count()
         if booked:
             return Response(
-                {"detail": f"Us din {booked} booked appointments hain. Pehle unhe cancel karo.",
+                {"detail": f"There are {booked} booked appointments on that day. Cancel them first.",
                  "code": "has_bookings"},
                 status=409,
             )
@@ -284,7 +284,7 @@ class AdminDoctorViewSet(viewsets.ModelViewSet):
             defaults={"reason": serializer.validated_data["reason"]},
         )
         if not created:
-            return Response({"detail": "Is date ki leave pehle se hai.", "code": "exists"},
+            return Response({"detail": "A leave already exists for this date.", "code": "exists"},
                             status=409)
         return Response(
             {"id": leave.id, "date": leave.date, "reason": leave.reason}, status=201

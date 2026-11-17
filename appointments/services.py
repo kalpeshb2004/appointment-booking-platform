@@ -85,11 +85,11 @@ def book_appointment(patient, doctor, day, start, reason=""):
 
     # --- Basic rules (lock se pehle, sasta check) ---
     if not doctor.is_active:
-        raise BookingError("Ye doctor abhi available nahi hai.")
+        raise BookingError("This doctor is currently unavailable.")
     if day < today:
-        raise BookingError("Past date me booking nahi ho sakti.")
+        raise BookingError("Bookings cannot be made for past dates.")
     if day > today + timedelta(days=MAX_ADVANCE_DAYS):
-        raise BookingError(f"Sirf agle {MAX_ADVANCE_DAYS} din tak booking hoti hai.")
+        raise BookingError(f"Bookings are only open for the next {MAX_ADVANCE_DAYS} days.")
 
     with transaction.atomic():
         # Doctor ki row LOCK. Dusra request yahin ruk jaata jab tak
@@ -100,7 +100,7 @@ def book_appointment(patient, doctor, day, start, reason=""):
         # Slot ab bhi available hai? (lock ke andar check, safe)
         if start not in get_available_slots(doctor, day):
             raise BookingError(
-                "Ye slot available nahi hai (book ho chuka ya schedule me nahi).",
+                "This slot is not available (already booked or outside the doctor's schedule).",
                 status_code=409,
                 code="slot_unavailable",
             )
@@ -110,7 +110,7 @@ def book_appointment(patient, doctor, day, start, reason=""):
             patient=patient, date=day, start_time=start, status="booked"
         ).exists():
             raise BookingError(
-                "Is time pe aapki pehle se ek booking hai.",
+                "You already have a booking at this time.",
                 status_code=409,
                 code="patient_clash",
             )
@@ -133,7 +133,7 @@ def book_appointment(patient, doctor, day, start, reason=""):
         except IntegrityError:
             # Kisi tarah do request nikal gayi to DB unique (active_slot) rok deta
             raise BookingError(
-                "Slot abhi kisi aur ne book kar liya.",
+                "This slot was just booked by someone else.",
                 status_code=409,
                 code="slot_taken",
             )
@@ -156,7 +156,7 @@ def cancel_appointment(appointment_id, patient):
 
         if appt.status != "booked":
             raise BookingError(
-                f"Ye appointment pehle se {appt.status} hai, cancel nahi ho sakti.",
+                f"This appointment is already {appt.status} and cannot be cancelled.",
                 409,
                 "not_cancellable",
             )
@@ -165,7 +165,7 @@ def cancel_appointment(appointment_id, patient):
         start_dt = timezone.make_aware(datetime.combine(appt.date, appt.start_time))
         if start_dt - timezone.now() < timedelta(hours=CANCEL_MIN_HOURS):
             raise BookingError(
-                f"Appointment se {CANCEL_MIN_HOURS} ghante pehle tak hi cancel hoti hai.",
+                f"Appointments can only be cancelled at least {CANCEL_MIN_HOURS} hours before the start time.",
                 400,
                 "too_late",
             )
@@ -195,7 +195,7 @@ def update_appointment_status(appointment_id, doctor, new_status):
         # State machine: booked → completed / no_show. Baaki se aage nahi.
         if appt.status != "booked":
             raise BookingError(
-                f"Appointment pehle se {appt.status} hai, status nahi badal sakta.",
+                f"This appointment is already {appt.status}; its status cannot be changed.",
                 409,
                 "not_updatable",
             )
@@ -204,7 +204,7 @@ def update_appointment_status(appointment_id, doctor, new_status):
         start_dt = timezone.make_aware(datetime.combine(appt.date, appt.start_time))
         if start_dt > timezone.now():
             raise BookingError(
-                "Appointment ka time abhi shuru nahi hua.", 400, "too_early"
+                "The appointment has not started yet.", 400, "too_early"
             )
 
         appt.status = new_status

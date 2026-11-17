@@ -82,7 +82,7 @@ class DoctorListView(ListAPIView):
         # id number hona chahiye, warna 400 (500 crash nahi)
         for key, value in (("hospital", hospital), ("department", department)):
             if value and not value.isdigit():
-                raise ValidationError({key: "Number (id) dena zaruri hai."})
+                raise ValidationError({key: "A numeric id is required."})
 
         if hospital:
             qs = qs.filter(department__hospital_id=hospital)
@@ -124,18 +124,18 @@ class DoctorSlotsView(APIView):
         # --- date validate ---
         date_str = request.query_params.get("date")
         if not date_str:
-            raise ValidationError({"date": "date zaruri hai (format: YYYY-MM-DD)."})
+            raise ValidationError({"date": "date is required (format: YYYY-MM-DD)."})
         try:
             day = datetime.strptime(date_str, "%Y-%m-%d").date()
         except ValueError:
-            raise ValidationError({"date": "Format galat. YYYY-MM-DD use kar."})
+            raise ValidationError({"date": "Invalid format. Use YYYY-MM-DD."})
 
         today = timezone.localdate()
         if day < today:
-            raise ValidationError({"date": "Past date ke slots nahi milte."})
+            raise ValidationError({"date": "Slots are not available for past dates."})
         if day > today + timedelta(days=MAX_ADVANCE_DAYS):
             raise ValidationError(
-                {"date": f"Sirf agle {MAX_ADVANCE_DAYS} din tak booking hoti hai."}
+                {"date": f"Bookings are only open for the next {MAX_ADVANCE_DAYS} days."}
             )
 
         slots = get_available_slots(doctor, day)

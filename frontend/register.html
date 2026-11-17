@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Register | Hospital Appointments</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="auth-wrap">
+    <div class="card">
+      <h1>Register</h1>
+      <p class="sub">Create a patient account</p>
+
+      <form id="register-form">
+        <label for="first_name">First name</label>
+        <input id="first_name" type="text" required />
+
+        <label for="username">Username</label>
+        <input id="username" type="text" required autocomplete="username" />
+
+        <label for="email">Email</label>
+        <input id="email" type="email" required />
+
+        <label for="password">Password (minimum 8 characters)</label>
+        <input id="password" type="password" required minlength="8" autocomplete="new-password" />
+
+        <label for="phone">Phone (optional)</label>
+        <input id="phone" type="tel" maxlength="15" />
+
+        <label for="gender">Gender (optional)</label>
+        <select id="gender">
+          <option value="">Select</option>
+          <option value="M">Male</option>
+          <option value="F">Female</option>
+          <option value="O">Other</option>
+        </select>
+
+        <button type="submit">Register</button>
+        <div id="msg" class="msg"></div>
+      </form>
+
+      <p class="switch">Already have an account? <a href="login.html">Login</a></p>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>
