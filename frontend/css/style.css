@@ -144,3 +144,23 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
   font-size: 0.95rem;
 }
 .btn:hover { background: var(--primary-dark); }
+
+/* ---------- Booking page ---------- */
+.book-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 760px) {
+  .book-layout { grid-template-columns: 1fr; }
+}
+.panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+}
+.panel h2 { margin: 0 0 12px; font-size: 1.15rem; }
+.schedule-title { margin: 12px 0 4px; font-weight: 600; font-size: 0.9rem; }
+.schedule-list { margin: 0; padding-left: 18px; font-size: 0.9rem; color: var(--muted); }

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Book Appointment | MediBook</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header id="navbar"></header>
+
+  <main class="container">
+    <h1>Book appointment</h1>
+    <p id="status" class="status"></p>
+
+    <div class="book-layout">
+      <section class="panel" id="doctor-info">
+        <h2>Doctor</h2>
+        <p class="doc-detail">Loading...</p>
+      </section>
+
+      <!-- Hidden for now. F3.3 and F3.4 will use it -->
+      <section class="panel" id="booking-panel" hidden>
+        <h2>Pick date and time</h2>
+        <label for="date">Date</label>
+        <input id="date" type="date" />
+        <p id="slot-status" class="status"></p>
+        <div id="slot-grid" class="slot-grid"></div>
+        <label for="reason">Reason (optional)</label>
+        <input id="reason" type="text" maxlength="255" />
+        <button id="confirm-btn" type="button" disabled>Confirm booking</button>
+        <p id="msg"></p>
+      </section>
+    </div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/navbar.js"></script>
+  <script src="js/book.js"></script>
+</body>
+</html>

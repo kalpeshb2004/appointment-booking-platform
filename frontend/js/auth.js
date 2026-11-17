@@ -23,8 +23,10 @@ function logout() {
 // NOTE: this is only UX. Real security is enforced by backend permissions (403).
 function requireLogin(allowedRoles = null) {
   const user = getUser();
-  if (!user || !getTokens().access) {
-    window.location.href = "login.html";
+    if (!user || !getTokens().access) {
+    // Remember the page so login can send the user back here
+    const here = window.location.pathname.split("/").pop() + window.location.search;
+    window.location.href = "login.html?next=" + encodeURIComponent(here);
     return null;
   }
   if (allowedRoles && !allowedRoles.includes(user.role)) {
@@ -32,6 +34,13 @@ function requireLogin(allowedRoles = null) {
     return null;
   }
   return user;
+
+  // Safe redirect target after login. Only a same-folder .html page is allowed,
+// so ?next=https://evil.com can never send the user to another site (open redirect).
+function safeNext() {
+  const next = new URLSearchParams(window.location.search).get("next");
+  return next && /^[\w-]+\.html(\?[\w=&%.-]*)?$/.test(next) ? next : null;
+}
 }
 
 /* ---------- Login page ---------- */
@@ -62,7 +71,7 @@ if (loginForm) {
 
     if (res.ok) {
       saveSession(res.data);
-      window.location.href = ROLE_HOME[res.data.user.role];
+      window.location.href = safeNext() || ROLE_HOME[res.data.user.role];
     } else {
       showMessage(msg, errorText(res.data));
       btn.disabled = false;
