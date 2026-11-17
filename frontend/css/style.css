@@ -164,3 +164,30 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 .panel h2 { margin: 0 0 12px; font-size: 1.15rem; }
 .schedule-title { margin: 12px 0 4px; font-weight: 600; font-size: 0.9rem; }
 .schedule-list { margin: 0; padding-left: 18px; font-size: 0.9rem; color: var(--muted); }
+
+
+/* ---------- Slots ---------- */
+.slot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
+  margin: 8px 0 12px;
+}
+/* Overrides the full-width form button style */
+.slot-btn {
+  width: auto;
+  margin: 0;
+  padding: 8px 0;
+  font-size: 0.9rem;
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.slot-btn:hover { border-color: var(--primary); color: var(--primary); }
+.slot-btn.selected {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
