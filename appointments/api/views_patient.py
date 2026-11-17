@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 
 from appointments.models import Appointment, Doctor
 from appointments.permissions import IsPatient
-from appointments.services import BookingError, book_appointment
+from appointments.services import BookingError, book_appointment,cancel_appointment
 
 from .serializers import AppointmentSerializer, BookingSerializer
 
@@ -93,4 +93,36 @@ class AppointmentListCreateView(APIView):
         return Response(
             AppointmentSerializer(appointment).data,
             status=status.HTTP_201_CREATED,
+        )
+
+class AppointmentDetailView(APIView):
+    """
+    GET    /api/appointments/<id> : ek booking ki detail
+    DELETE /api/appointments/<id> : booking cancel
+    """
+
+    permission_classes = [IsPatient]
+
+    def get(self, request, pk):
+        # patient=... filter: dusre ki booking par 404
+        appointment = get_object_or_404(
+            Appointment.objects.select_related(
+                "doctor__user", "doctor__department__hospital"
+            ),
+            pk=pk,
+            patient=request.user.patient,
+        )
+        return Response(AppointmentSerializer(appointment).data)
+
+    def delete(self, request, pk):
+        try:
+            appointment = cancel_appointment(pk, request.user.patient)
+        except BookingError as e:
+            return Response(
+                {"detail": e.message, "code": e.code}, status=e.status_code
+            )
+        # 204 (no body) ki jagah 200 + data: frontend ko updated status mil jaata
+        return Response(
+            {"message": "Appointment cancel ho gayi.",
+             "appointment": AppointmentSerializer(appointment).data}
         )

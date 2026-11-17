@@ -8,6 +8,7 @@ from django.db import IntegrityError, transaction
 
 
 MAX_ADVANCE_DAYS = 30  # kitne din aage tak booking
+CANCEL_MIN_HOURS = 2  # appointment se kitne ghante pehle tak cancel allowed
 
 def generate_slots(doctor, day):
     """
@@ -136,3 +137,41 @@ def book_appointment(patient, doctor, day, start, reason=""):
                 status_code=409,
                 code="slot_taken",
             )
+def cancel_appointment(appointment_id, patient):
+    """
+    Patient apni booking cancel kare.
+    Rules: apni hi ho, status booked ho, appointment se CANCEL_MIN_HOURS pehle ho.
+    """
+    with transaction.atomic():
+        try:
+            # SECURITY: patient=patient. Dusre ki booking id daalne par bhi
+            # "nahi mili" (404), exist karti hai ye bhi nahi batate.
+            # select_for_update: row lock, do cancel ek saath aaye ya admin
+            # status badal raha ho to ek-ek karke chalte.
+            appt = Appointment.objects.select_for_update().get(
+                pk=appointment_id, patient=patient
+            )
+        except Appointment.DoesNotExist:
+            raise BookingError("Appointment nahi mili.", 404, "not_found")
+
+        if appt.status != "booked":
+            raise BookingError(
+                f"Ye appointment pehle se {appt.status} hai, cancel nahi ho sakti.",
+                409,
+                "not_cancellable",
+            )
+
+        # date + time ko timezone-aware datetime banao, tabhi now() se compare ho
+        start_dt = timezone.make_aware(datetime.combine(appt.date, appt.start_time))
+        if start_dt - timezone.now() < timedelta(hours=CANCEL_MIN_HOURS):
+            raise BookingError(
+                f"Appointment se {CANCEL_MIN_HOURS} ghante pehle tak hi cancel hoti hai.",
+                400,
+                "too_late",
+            )
+
+        appt.status = "cancelled"
+        # Model ka save() chalta: status != booked → active_slot = NULL.
+        # Isse slot wapas free, koi aur book kar sakta.
+        appt.save()
+        return appt

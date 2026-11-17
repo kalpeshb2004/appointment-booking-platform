@@ -2,7 +2,7 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from .views_auth import LoginView, MeView, RegisterView
-from .views_patient import AppointmentListCreateView
+from .views_patient import AppointmentDetailView,AppointmentListCreateView
 from .views_public import (DoctorDetailView, DoctorListView, DoctorSlotsView,
                            HospitalDepartmentListView, HospitalListView)
 
@@ -24,4 +24,7 @@ urlpatterns = [
     # Appointments (patient)
     path("appointments", AppointmentListCreateView.as_view(),
          name="appointment-list-create"),
+    # urlpatterns me add
+    path("appointments/<int:pk>", AppointmentDetailView.as_view(),
+         name="appointment-detail"),
 ]
