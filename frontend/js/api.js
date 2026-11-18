@@ -98,3 +98,11 @@ function showMessage(el, text, type = "error") {
   el.textContent = text;
   el.className = `msg ${type}`;
 }
+
+// "2026-11-23" -> "Mon, 23 Nov 2026". Parsed manually to avoid the UTC shift.
+function prettyDate(str) {
+  const [y, m, d] = str.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-IN", {
+    weekday: "short", day: "numeric", month: "short", year: "numeric",
+  });
+}

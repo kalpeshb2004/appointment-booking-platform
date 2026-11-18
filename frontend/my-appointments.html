@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Appointments | MediBook</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header id="navbar"></header>
+
+  <main class="container">
+    <h1>My appointments</h1>
+
+    <div class="list-toolbar">
+      <div>
+        <label for="filter">Show</label>
+        <select id="filter">
+          <option value="upcoming">Upcoming</option>
+          <option value="all">All</option>
+          <option value="booked">Booked</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+          <option value="no_show">No show</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="msg" class="msg"></div>
+    <p id="status" class="status"></p>
+    <div id="appt-list" class="appt-list"></div>
+  </main>
+
+  <!-- Order matters: each file uses functions from the ones above it -->
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/navbar.js"></script>
+  <script src="js/appointments.js"></script>
+</body>
+</html>
