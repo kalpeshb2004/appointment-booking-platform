@@ -10,33 +10,38 @@
   <header id="navbar"></header>
 
   <main class="container">
-    <h1>Book appointment</h1>
-    <p id="status" class="status"></p>
+    <a class="back-link" href="index.html">&larr; Back to doctors</a>
 
-    <div class="book-layout">
-      <section class="panel" id="doctor-info">
-        <h2>Doctor</h2>
-        <p class="doc-detail">Loading...</p>
-      </section>
+    <!-- Shown only if the doctor id is invalid or the doctor is not found -->
+    <p id="page-error" class="msg error"></p>
 
-      <!-- Hidden for now. F3.3 and F3.4 will use it -->
-      <section class="panel" id="booking-panel" hidden>
-        <h2>Pick date and time</h2>
+    <div id="booking-page" hidden>
+      <!-- Filled by booking.js -->
+      <section id="doctor-info" class="panel"></section>
+
+      <section class="panel">
+        <h2>Choose a date and time</h2>
+
         <label for="date">Date</label>
         <input id="date" type="date" />
+
         <p id="slot-status" class="status"></p>
-        <div id="slot-grid" class="slot-grid"></div>
-        <label for="reason">Reason (optional)</label>
-        <input id="reason" type="text" maxlength="255" />
-        <button id="confirm-btn" type="button" disabled>Confirm booking</button>
-        <p id="msg"></p>
+        <div id="slots" class="slot-grid"></div>
+
+        <label for="reason">Reason for visit (optional)</label>
+        <input id="reason" type="text" maxlength="255" placeholder="e.g. Chest pain, routine checkup" />
+
+        <p id="summary" class="summary"></p>
+        <button id="confirm" type="button" disabled>Confirm booking</button>
+        <div id="msg" class="msg"></div>
       </section>
     </div>
   </main>
 
+  <!-- Order matters: each file uses functions from the ones above it -->
   <script src="js/api.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/navbar.js"></script>
-  <script src="js/book.js"></script>
+  <script src="js/booking.js"></script>
 </body>
 </html>

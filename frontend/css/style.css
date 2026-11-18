@@ -146,48 +146,30 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 .btn:hover { background: var(--primary-dark); }
 
 /* ---------- Booking page ---------- */
-.book-layout {
-  display: grid;
-  grid-template-columns: 1fr 1.4fr;
-  gap: 20px;
-  align-items: start;
-}
-@media (max-width: 760px) {
-  .book-layout { grid-template-columns: 1fr; }
-}
+.back-link { display: inline-block; margin-bottom: 12px; color: var(--primary); text-decoration: none; font-size: 0.9rem; }
 .panel {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 18px;
+  padding: 20px;
+  margin-bottom: 16px;
 }
-.panel h2 { margin: 0 0 12px; font-size: 1.15rem; }
-.schedule-title { margin: 12px 0 4px; font-weight: 600; font-size: 0.9rem; }
-.schedule-list { margin: 0; padding-left: 18px; font-size: 0.9rem; color: var(--muted); }
+.panel h2 { margin: 0 0 12px; font-size: 1.1rem; }
+.panel h1 { margin: 0 0 4px; }
+.schedule-list { margin: 8px 0 0; padding-left: 18px; color: var(--muted); font-size: 0.9rem; }
 
-
-/* ---------- Slots ---------- */
-.slot-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
-  gap: 8px;
-  margin: 8px 0 12px;
-}
-/* Overrides the full-width form button style */
+/* Slot buttons override the full-width form button style */
+.slot-grid { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 16px; }
 .slot-btn {
   width: auto;
   margin: 0;
-  padding: 8px 0;
-  font-size: 0.9rem;
+  padding: 8px 14px;
   background: var(--card);
   color: var(--text);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  cursor: pointer;
+  font-size: 0.95rem;
 }
-.slot-btn:hover { border-color: var(--primary); color: var(--primary); }
-.slot-btn.selected {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: #fff;
-}
+.slot-btn:hover { background: #e6f4f6; }
+.slot-btn.selected { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.summary { min-height: 1.4em; font-weight: 600; margin: 8px 0 0; }
