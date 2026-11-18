@@ -1,22 +1,22 @@
 from django.urls import path
+from rest_framework.routers import SimpleRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 
+from .views_admin import (AdminDepartmentViewSet, AdminDoctorViewSet,
+                          AdminHospitalViewSet, AdminLeaveDeleteView,
+                          AdminStatsView)
 from .views_auth import LoginView, MeView, RegisterView
-from .views_patient import AppointmentDetailView,AppointmentListCreateView
-
-from .views_public import (DoctorDetailView, DoctorListView, DoctorSlotsView,HospitalDepartmentListView, HospitalListView)
-
 from .views_doctor import DoctorAppointmentListView, DoctorAppointmentStatusView
+from .views_patient import AppointmentDetailView, AppointmentListCreateView
+from .views_public import (DoctorDetailView, DoctorListView, DoctorSlotsView,
+                           HospitalDepartmentListView, HospitalListView)
 
-from .views_admin import (AdminDepartmentViewSet, AdminDoctorViewSet,AdminHospitalViewSet, AdminLeaveDeleteView,AdminStatsView)
-
-from rest_framework.routers import SimpleRouter
-
-
-# trailing_slash=False: baaki URLs jaise bina "/" ke
+# Router builds the list/detail URLs for the admin CRUD viewsets.
+# trailing_slash=False keeps these URLs consistent with the rest (no "/" at the end).
 router = SimpleRouter(trailing_slash=False)
 router.register("admin/hospitals", AdminHospitalViewSet, basename="admin-hospital")
 router.register("admin/departments", AdminDepartmentViewSet, basename="admin-department")
+router.register("admin/doctors", AdminDoctorViewSet, basename="admin-doctor")
 
 urlpatterns = [
     # Auth
@@ -25,7 +25,7 @@ urlpatterns = [
     path("auth/refresh", TokenRefreshView.as_view(), name="auth-refresh"),
     path("auth/me", MeView.as_view(), name="auth-me"),
 
-    # Public
+    # Public browsing
     path("hospitals", HospitalListView.as_view(), name="hospital-list"),
     path("hospitals/<int:pk>/departments", HospitalDepartmentListView.as_view(),
          name="hospital-departments"),
@@ -33,19 +33,22 @@ urlpatterns = [
     path("doctors/<int:pk>", DoctorDetailView.as_view(), name="doctor-detail"),
     path("doctors/<int:pk>/slots", DoctorSlotsView.as_view(), name="doctor-slots"),
 
-    # Appointments (patient)
+    # Patient
     path("appointments", AppointmentListCreateView.as_view(),
          name="appointment-list-create"),
-    # urlpatterns me add
     path("appointments/<int:pk>", AppointmentDetailView.as_view(),
          name="appointment-detail"),
-          # urlpatterns me add
+
+    # Doctor
+    path("doctor/appointments", DoctorAppointmentListView.as_view(),
+         name="doctor-appointments"),
     path("doctor/appointments/<int:pk>/status", DoctorAppointmentStatusView.as_view(),
          name="doctor-appointment-status"),
-         # urlpatterns me add
+
+    # Admin
     path("admin/stats", AdminStatsView.as_view(), name="admin-stats"),
     path("admin/leaves/<int:pk>", AdminLeaveDeleteView.as_view(), name="admin-leave-delete"),
 ]
 
-# Router ke URLs list ke end me jod do
+# The router's URLs are added at the end
 urlpatterns += router.urls
