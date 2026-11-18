@@ -236,3 +236,26 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
   border: 1px solid var(--success);
 }
 .btn-ok:hover { background: var(--success); color: #fff; }
+
+/* ---------- Admin dashboard ---------- */
+.section-title { margin: 24px 0 10px; font-size: 1.1rem; }
+.stat.highlight strong { color: var(--primary); }
+
+.table-wrap {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow-x: auto; /* wide tables scroll sideways on small screens */
+}
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.data-table th, .data-table td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+.data-table th { background: var(--bg); font-weight: 600; white-space: nowrap; }
+.data-table tr:last-child td { border-bottom: 0; }
+.data-table .num { text-align: right; }
+
+/* Pure CSS bar chart (no chart library needed) */
+.bar-row { display: flex; align-items: center; gap: 12px; padding: 8px 14px; border-bottom: 1px solid var(--border); }
+.bar-row:last-child { border-bottom: 0; }
+.bar-label { width: 160px; flex-shrink: 0; font-size: 0.9rem; }
+.bar-track { flex: 1; background: var(--bg); border-radius: 6px; height: 14px; overflow: hidden; }
+.bar-fill
