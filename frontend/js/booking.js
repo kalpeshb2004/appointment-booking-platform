@@ -13,16 +13,6 @@ let doctorId = null;
 let selectedSlot = null; // e.g. "10:15"
 let requestCounter = 0;  // ignores stale slot responses (same idea as doctors.js)
 
-/* ---------- Date helpers ----------
-   Date.toISOString() converts to UTC and can shift the date by one day
-   (an IST morning would become "yesterday"). So the string is built from
-   local date parts instead. */
-function toDateString(d) {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
 
 
 

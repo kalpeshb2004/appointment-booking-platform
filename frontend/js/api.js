@@ -106,3 +106,12 @@ function prettyDate(str) {
     weekday: "short", day: "numeric", month: "short", year: "numeric",
   });
 }
+
+// Local YYYY-MM-DD string. toISOString() converts to UTC and can shift the
+// date by one day, so the string is built from local date parts instead.
+function toDateString(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}

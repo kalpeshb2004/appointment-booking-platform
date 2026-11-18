@@ -210,3 +210,29 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 }
 .btn-danger:hover { background: var(--danger); color: #fff; }
 
+/* ---------- Doctor dashboard ---------- */
+.stats { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.stat {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 18px;
+  min-width: 120px;
+}
+.stat strong { display: block; font-size: 1.5rem; }
+.stat span { color: var(--muted); font-size: 0.85rem; }
+
+.appt-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.hint { color: var(--muted); font-size: 0.85rem; }
+
+/* Small green button (overrides the full-width form button) */
+.btn-ok {
+  width: auto;
+  margin: 0;
+  padding: 7px 14px;
+  font-size: 0.9rem;
+  background: transparent;
+  color: var(--success);
+  border: 1px solid var(--success);
+}
+.btn-ok:hover { background: var(--success); color: #fff; }
