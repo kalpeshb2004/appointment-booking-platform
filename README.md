@@ -14,11 +14,11 @@ Python, Django, Django REST Framework, MySQL, JWT authentication, HTML/CSS/JavaS
 
 | Find a doctor | Book a slot |
 |---|---|
-| ![Find a doctor](appointment-booking/screenshots/index.png) | ![Book a slot](appointment-booking/screenshots/booking.png) |
+| ![Find a doctor](screenshots/index.png) | ![Book a slot](screenshots/booking.png) |
 
 | Doctor dashboard | Admin dashboard |
 |---|---|
-| ![Doctor dashboard](appointment-booking/screenshots/doctor_booking.png) | ![Admin dashboard](appointment-booking/screenshots/admin_dashboard.png) |
+| ![Doctor dashboard](screenshots/doctor_booking.png) | ![Admin dashboard](screenshots/admin_dashboard.png) |
 
 ## How double booking is prevented
 1. **Transaction:** the booking succeeds or fails as one unit.
