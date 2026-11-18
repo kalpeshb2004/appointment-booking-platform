@@ -58,4 +58,4 @@ Base URL `/api`. Protected endpoints need `Authorization: Bearer <token>`.
 | Admin | `GET /admin/stats`, CRUD on `/admin/hospitals`, `/admin/departments`, `/admin/doctors` |
 
 ## Author
-Saurabh Vijay Isane
+Kalpesh Dharmraj Bhure
